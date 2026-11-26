@@ -203,6 +203,7 @@ class CrossPortLoopbackIsolationTest {
         isForMainFrame: Boolean = false,
         headers: Map<String, String> = mapOf("Sec-Fetch-Mode" to "navigate"),
         encodedUserInfo: String? = null,
+        encodedFragment: String? = null,
     ): WebResourceRequest {
         val uri = mockk<Uri>(relaxed = true)
         every { uri.scheme } returns scheme
@@ -212,6 +213,7 @@ class CrossPortLoopbackIsolationTest {
         every { uri.path } returns encodedPath
         every { uri.encodedQuery } returns encodedQuery
         every { uri.query } returns encodedQuery
+        every { uri.encodedFragment } returns encodedFragment
         every { uri.encodedUserInfo } returns encodedUserInfo
         every { uri.userInfo } returns encodedUserInfo
         every { uri.encodedAuthority } returns buildString {
@@ -287,6 +289,34 @@ class CrossPortLoopbackIsolationTest {
             headers = mapOf("Sec-Fetch-Mode" to "navigate"),
         )
         assertRedirectDocument(client().shouldInterceptRequest(view, req), "ampersand html escape")
+    }
+
+    @Test
+    fun `subframe GET navigation preserves encoded fragment and escapes ampersands`() {
+        expectRedirectDocument("http://localhost:3000/a%20b?x=1%26y=2#t=a%26b%3Dc&amp;next=1")
+        val req = request(
+            encodedPath = "/a%20b",
+            encodedQuery = "x=1%26y=2",
+            encodedFragment = "t=a%26b%3Dc&next=1",
+        )
+        assertRedirectDocument(client().shouldInterceptRequest(view, req), "encoded fragment")
+    }
+
+    @Test
+    fun `subframe GET navigation preserves an explicitly empty fragment`() {
+        expectRedirectDocument("http://localhost:3000/app#")
+        assertRedirectDocument(
+            client().shouldInterceptRequest(view, request(encodedFragment = "")),
+            "empty fragment",
+        )
+    }
+
+    @Test
+    fun `unsafe characters in fragment still fail closed`() {
+        val c = client()
+        for (fragment in listOf("a;b", "a=\"", "a='", "<tag>", "a\\b", "a\r", "a\n", "a b")) {
+            assertForbidden(c.shouldInterceptRequest(view, request(encodedFragment = fragment)), "unsafe fragment")
+        }
     }
 
     @Test
