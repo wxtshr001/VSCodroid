@@ -2199,7 +2199,8 @@ class VSCodroidWebViewClient(
             val rawQuery = uri.encodedQuery
             val queryPart = if (rawQuery != null) "?$rawQuery" else ""
 
-            val target = "http://localhost$portPart$rawPath$queryPart"
+            val fragmentPart = uri.encodedFragment?.let { "#$it" } ?: ""
+            val target = "http://localhost$portPart$rawPath$queryPart$fragmentPart"
             if (!isSafeMetaRefreshUrl(target)) return null
             return target
         }
