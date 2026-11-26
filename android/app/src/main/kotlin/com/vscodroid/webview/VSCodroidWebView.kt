@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.res.Resources
 import android.os.Build
 import android.view.MotionEvent
+import android.webkit.CookieManager
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -24,6 +25,9 @@ object VSCodroidWebView {
 
     @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
     fun configure(webView: WebView) {
+        // Experimental: extension iframes may need loopback session cookies across sites.
+        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
+
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
